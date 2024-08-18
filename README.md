@@ -1,2 +1,1 @@
-# learning_os
-Learning Operating System
+# Learn OS in 3days

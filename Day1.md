@@ -62,7 +62,7 @@ CPUが機械語命令を順次実行していく流れのことをハードウ�
 
 今回はOpenSBIを使用してブートを行う。SBI（Supervisor Binary Interface）とは、ファームウェアがOSに提供する機能を定義しているインターフェースで、いわばカーネルが利用できるAPIのようなものである。SBIの仕様書は[GitHub上で公開](https://github.com/riscv-non-isa/riscv-sbi-doc/releases)されており、デバッグコンソール上での文字の表示や、再起動・シャットダウン、タイマーの設定など、あると便利な機能が定義されている。SBIの実装例として有名なのがOpenSBIで、QEMUではデフォルトでOpenSBIが起動し、ハードウェア特有の初期化処理を済ませた後、カーネルを起動してくれる。
 
-`os/run.sh`を実行してみて、OpenSBIが起動し、'booted!'表示されるか確認すること。
+`os/run.sh`を実行してみて、OpenSBIが起動し、'booted!'表示されるか確認すること（`Ctrl`+`x`でQEMUを停止できる）。
 
 ### **プロセッサの動作モード**
 

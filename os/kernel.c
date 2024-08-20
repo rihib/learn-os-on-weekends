@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-extern char __bss[], __bss_end[], __stack_top[];
+extern char __bss[], __bss_end[], __stack_top[], __free_ram[], __free_ram_end[];
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);

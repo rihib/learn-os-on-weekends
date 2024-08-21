@@ -82,7 +82,7 @@ RISC-Vには、下記のような特権命令がある。CSR (Control and Status
 | `csrw csr, rs` | `rs`の値をCSRに書き込む | `csr = rs;` |
 | `csrrw rd, csr, rs` | CSRの値を`rd`に読み込み、`rs`の値をCSRに書き込む | `rd, csr = csr, rs;` |
 | `sret` | SモードからUモードに戻る（プログラムカウンタも復元） | |
-| `sfence.vma` | TLBをフラッシュする | |
+| `sfence.vma` | MMUのTLBをフラッシュする。またメモリフェンスの役割も果たす | |
 
 その他に下記のようなアセンブリ命令がある。
 

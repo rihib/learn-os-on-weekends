@@ -146,6 +146,34 @@ PID、プロセスの状態、コンテキストスイッチ時のスタック�
 
 `satp`レジスタは前述したページテーブルベースレジスタに相当する。`satp`レジスタにセットする値は、MSB（最上位ビット）がSv32方式を有効にするためのビットであり、下位ビットにはページテーブルの物理ページ番号が格納される。ちなみにブート時には`satp`レジスタは0に初期化されているため、ページングは無効になっており、物理アドレスがそのまま仮想アドレスとして扱われる。
 
+## **ユーザープログラム**
+
+### **ユーザープログラムの実装**
+
+`os/shell.c`ですでに定義されているユーザープログラムを実行できるようにしたい。
+
+`os/run.sh`を実行すると`shell.bin.o`が生成されてるのがわかる。`shell.bin.o`は生バイナリ形式の実行イメージであり、`llvm-nm`コマンドで中身を見てみると、`_binary_shell_bin_start`、`_binary_shell_bin_end`、`_binary_shell_bin_size`というシンボルが定義されていることがわかる。これらのシンボルはそれぞれ、実行イメージの先頭アドレス、終端アドレス、サイズを表している。
+
+```bash
+$ llvm-nm shell.bin.o
+00010260 D _binary_shell_bin_end
+00010260 A _binary_shell_bin_size
+00000000 D _binary_shell_bin_start
+```
+
+`os/run.sh`ではカーネルのビルド時にClangに`shell.bin.o`を渡しているため、カーネル内でこれらのシンボルは例えば下記のように使用することができる。つまり、`_binary_shell_bin_start`は実行イメージのポインタとして、`_binary_shell_bin_size`は実行イメージのサイズとして使用できるのである。
+
+```c
+extern char _binary_shell_bin_start[];
+extern char _binary_shell_bin_size[];
+
+void main(void) {
+  uint8_t *shell_bin = (uint8_t *) _binary_shell_bin_start;
+  printf("shell_bin size = %d\n", (int) _binary_shell_bin_size);
+  printf("shell_bin[0] = %x (%d bytes)\n", shell_bin[0]);
+}
+```
+
 ### **システムコール**
 
 ユーザープログラムから自由にプロセッサの設定を変更したり、ハードウェアを直接制御したりできてしまうと、システムの安定性やセキュリティ上重大な問題となるため、カーネルは実行ファイルからロードした機械語プログラムを実行している間、プロセッサをユーザーモードに設定して、ユーザープログラムが問題がある動作を行おうとすると特権違反例外が発生し、カーネルはそのプロセスを強制終了するなどの処置をとる。

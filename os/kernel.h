@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 
 #define PROCS_MAX 8           // 最大プロセス数
 #define PROC_UNUSED 0         // 未使用のプロセス管理構造体

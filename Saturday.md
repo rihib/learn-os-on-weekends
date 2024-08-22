@@ -35,7 +35,7 @@ brew install llvm qemu
 
 ```bash
 sudo apt update && sudo apt install -y clang llvm lld qemu-system-riscv32 curl
-cd <開発用ディレクトリ>
+cd <開発用ディレクトリ>/os
 curl -LO https://github.com/qemu/qemu/raw/v8.0.4/pc-bios/opensbi-riscv32-generic-fw_dynamic.bin
 ```
 

@@ -102,6 +102,7 @@ RISC-Vには、下記のような特権命令がある。CSR (Control and Status
 | `mv rd, rs` | `rs`の値を`rd`にコピーする | `rd = rs;` |
 | `call label` | `label`にジャンプする | `goto label;` |
 | `ret` | `ra`レジスタに格納されているリターンアドレスにジャンプする | `goto ra;` |
+| `ecall` | トラップハンドラを呼び出す | |
 
 ### **割り込み**
 

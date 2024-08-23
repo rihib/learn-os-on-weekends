@@ -71,7 +71,7 @@ PID、プロセスの状態、カーネルスタック（8KB）、スタック�
 
 `os/shell.c`ですでに定義されているユーザープログラムを実行できるようにしたい。
 
-`os/run.sh`を実行すると`shell.bin.o`が生成されてるのがわかる。`shell.bin.o`は生バイナリ形式の実行イメージであり、`llvm-nm`コマンドで中身を見てみると、`_binary_shell_bin_start`、`_binary_shell_bin_end`、`_binary_shell_bin_size`というシンボルが定義されていることがわかる。これらのシンボルはそれぞれ、実行イメージの先頭アドレス、終端アドレス、サイズを表している。
+`os/run.sh`を実行すると`shell.bin.o`が生成されているのがわかる。`shell.bin.o`は生バイナリ形式の実行イメージであり、`llvm-nm`コマンドで中身を見てみると、`_binary_shell_bin_start`、`_binary_shell_bin_end`、`_binary_shell_bin_size`というシンボルが定義されていることがわかる。これらのシンボルはそれぞれ、実行イメージの先頭アドレス、終端アドレス、サイズを表している。
 
 ```bash
 $ llvm-nm shell.bin.o

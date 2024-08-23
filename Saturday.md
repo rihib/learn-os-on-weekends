@@ -28,6 +28,7 @@ OSの役割には大きく２つあり、ハードウェアリソースの管理
 下記を実行し、必要なツールをインストールする。
 
 ```bash
+git clone https://github.com/rihib/learn-os-on-weekends.git
 brew install llvm qemu
 ```
 
@@ -35,6 +36,7 @@ brew install llvm qemu
 
 ```bash
 sudo apt update && sudo apt install -y clang llvm lld qemu-system-riscv32 curl
+git clone https://github.com/rihib/learn-os-on-weekends.git
 cd learn-os-on-weekends/os
 curl -LO https://github.com/qemu/qemu/raw/v8.0.4/pc-bios/opensbi-riscv32-generic-fw_dynamic.bin
 ```

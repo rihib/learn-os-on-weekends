@@ -48,9 +48,9 @@ __attribute__((aligned(4))) void traphandle(void){
     : 
     : "memory"
   );
-  //printf("scause: %x\n", READ_CSR(SCAUSE));
-  //printf("sepc: %x\n", READ_CSR(SEPC));
-  //printf("stval: %x\n", READ_CSR(STVAL));
+  printf("scause: %x\n", READ_CSR(SCAUSE));
+  printf("sepc: %x\n", READ_CSR(SEPC));
+  printf("stval: %x\n", READ_CSR(STVAL));
   PANIC("trap!");
   // restore registers
   __asm__ __volatile__ (
@@ -111,9 +111,8 @@ void* pagealoc(size_t pSize){
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
-  //trapinit();
-  //printf("trap initialized\n");
-  printf("starting ...");
+  trapinit();
+  printf("trap initialized\n");
   //__asm__ __volatile__("unimp");
   char *tp = pagealoc(2);
   printf("tp: %x\n", tp);

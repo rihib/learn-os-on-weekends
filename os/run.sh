@@ -2,9 +2,16 @@
 set -xue
 
 QEMU=qemu-system-riscv32
-CC=/opt/homebrew/opt/llvm/bin/clang # clangのパス (Ubuntuの場合は CC=clang)
-OBJCOPY=/opt/homebrew/opt/llvm/bin/llvm-objcopy
-
+if [ "$(uname)" == 'Darwin' ]; then
+  CC=/opt/homebrew/opt/llvm/bin/clang
+  OBJCOPY=/opt/homebrew/opt/llvm/bin/llvm-objcopy
+elif [ "$(expr substr $(uname -s) 1 5)" == 'Linux' ]; then
+  CC=clang
+  OBJCOPY=/usr/bin/llvm-objcopy
+else
+  echo "Your platform ($(uname -a)) is not supported."
+  exit 1
+fi
 CFLAGS="-std=c11 -O2 -g3 -Wall -Wextra --target=riscv32 -ffreestanding -nostdlib"
 
 # シェルをビルド

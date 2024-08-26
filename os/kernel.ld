@@ -1,11 +1,11 @@
 ENTRY(boot)
 
 SECTIONS {
-  . = 0x80200000;
+  . = 0x80200000; /* openSBIで定義されたメモリの読み込み開始位置*/
   __kernel_base = .;
 
   .text :{
-    KEEP(*(.text.boot));
+    KEEP(*(.text.boot)); /*boot関数を.text.bootに読み込むようにしてる  */
     *(.text .text.*);
   }
 

@@ -7,6 +7,7 @@ extern char __stack_top[];
 extern char __bss[], __bss_end[];
 extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
+uint32_t used_page_num = 0;
 
 __attribute__((aligned(4))) void traphandle(void){
   // save registers
@@ -47,9 +48,9 @@ __attribute__((aligned(4))) void traphandle(void){
     : 
     : "memory"
   );
-  printf("scause: %x\n", READ_CSR(SCAUSE));
-  printf("sepc: %x\n", READ_CSR(SEPC));
-  printf("stval: %x\n", READ_CSR(STVAL));
+  //printf("scause: %x\n", READ_CSR(SCAUSE));
+  //printf("sepc: %x\n", READ_CSR(SEPC));
+  //printf("stval: %x\n", READ_CSR(STVAL));
   PANIC("trap!");
   // restore registers
   __asm__ __volatile__ (
@@ -97,11 +98,25 @@ void trapinit(void){
   WRITE_CSR(STVEC, traphandle);
 }
 
+void* pagealoc(size_t pSize){
+  size_t size = pSize * PAGE_SIZE;
+  char *staddr = __free_ram + used_page_num * PAGE_SIZE;
+  if(staddr + size < __free_ram_end){
+    used_page_num += pSize;
+    memset(staddr, 0, size);
+    return staddr;
+  }
+  PANIC("run out of memory!");
+}
+
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
-  trapinit();
-  printf("trap initialized\n");
-  __asm__ __volatile__("unimp");
+  //trapinit();
+  //printf("trap initialized\n");
+  printf("starting ...");
+  //__asm__ __volatile__("unimp");
+  char *tp = pagealoc(2);
+  printf("tp: %x\n", tp);
   PANIC("booted!");
   printf("unreachable here!\n");
 }

@@ -20,6 +20,7 @@
     }                                                                     \
   } while (0)
 
+// inline asm コロン区切り 出力にtmpが指定されている
 #define READ_CSR(reg)                                     \
   ({                                                      \
     unsigned long __tmp;                                  \
@@ -32,6 +33,8 @@
     uint32_t __tmp = (value);                               \
     __asm__ __volatile__("csrw " #reg ", %0" ::"r"(__tmp)); \
   } while (0)
+
+void trap(void);
 
 struct sbiret {
   long error;

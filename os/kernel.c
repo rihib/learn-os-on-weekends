@@ -60,8 +60,13 @@ void trap(void) {
     "sw s10, -112(sp);\n"
     "sw s11, -116(sp);\n"
   );
+  uint32_t scause = READ_CSR(scause);
+  uint32_t stval = READ_CSR(stval);
+  uint32_t sepc = READ_CSR(sepc);
+  uint32_t sstatus = READ_CSR(sstatus);
+  uint32_t sscratch = READ_CSR(sscratch);
+  printf("trap: scause=%x stval=%x sepc=%x sstatus=%x", scause, stval, sepc, sstatus);
   PANIC("trap!");
-  
 }
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,

@@ -7,7 +7,8 @@ extern char __stack_top[];
 extern char __bss[], __bss_end[];
 extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
-uint32_t used_page_num = 0;
+paddr_t pagealoc_start = (paddr_t)__free_ram;
+
 
 __attribute__((aligned(4))) void traphandle(void){
   // save registers
@@ -101,10 +102,10 @@ void trapinit(void){
 
 paddr_t pagealloc(size_t pageCount){
   size_t size = pageCount * PAGE_SIZE;
-  paddr_t start = __free_ram + used_page_num * PAGE_SIZE;
+  paddr_t start= pagealoc_start;
   if(start + size > __free_ram_end)
     PANIC("run out of memory!");
-  used_page_num += pageCount;
+  pagealoc_start += size;
   memset(start, 0, size);
   return start;
 }
@@ -115,6 +116,8 @@ void kernel_main(void) {
   printf("trap initialized\n");
   //__asm__ __volatile__("unimp");
   paddr_t test_page = pagealloc(2);
+  printf("page_addr: %x\n", test_page);
+  test_page = pagealloc(2);
   printf("page_addr: %x\n", test_page);
   PANIC("booted!");
   printf("unreachable here!\n");

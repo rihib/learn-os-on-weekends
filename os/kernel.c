@@ -7,11 +7,18 @@ extern char __stack_top[];
 extern char __bss[], __bss_end[];
 extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
+paddr_t available_ram_start;
 
 void kernel_main(void) {
+  printf("Hello, RISC-V!\n");
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
+  available_ram_start = __free_ram;
   WRITE_CSR(stvec,trap);
-  __asm__ __volatile__("unimp\n");
+  // __asm__ __volatile__("unimp\n");
+  printf("available_ram_start=%x\n", available_ram_start);
+  paddr_t alloc_page_addr = alloc_page(1);
+  printf("alloc_page_addr=%x\n", alloc_page_addr);
+  printf("available_ram_start=%x\n", available_ram_start);
   PANIC("booted!");
   printf("unreachable here!\n");
 }
@@ -67,7 +74,7 @@ void trap(void) {
 
   printf("trap: scause=%x stval=%x sepc=%x sstatus=%x\n", scause, stval, sepc, sstatus);
   PANIC("trap!");
-  
+
   // レジスタの値を戻す
   uint32_t sscratch = READ_CSR(sscratch);
   __asm__ __volatile__(
@@ -109,6 +116,18 @@ void trap(void) {
     "sret;\n"
   );
 }
+
+paddr_t alloc_page(int page_count) {
+  size_t total_page_size = page_count * PAGE_SIZE;
+  if (available_ram_start + total_page_size > __free_ram_end) {
+    PANIC("out of memory");
+  }
+  memset(available_ram_start, 0, total_page_size);
+  paddr_t ret = available_ram_start;
+  available_ram_start += total_page_size;
+  return ret;
+}
+
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,
                        long arg5, long fid, long eid) {

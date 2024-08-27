@@ -35,6 +35,7 @@
   } while (0)
 
 void trap(void);
+paddr_t alloc_page(int page_count);
 
 struct sbiret {
   long error;

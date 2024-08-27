@@ -120,7 +120,7 @@ void ptemake(uint32_t* pagetable, vaddr_t va, paddr_t pa, uint32_t flags){
   uint32_t t1_pte = pagetable[t1_pageindex];
   if(t1_pte & PAGE_V != PAGE_V){
     paddr_t t0 = pagealloc(1);
-    pagetable[t1_pageindex] = t0 & 1024 | PAGE_V | PAGE_R | PAGE_W;
+    pagetable[t1_pageindex] = t0 & 1024 | PAGE_V;
     t1_pte = pagetable[t1_pageindex];
   }
   uint32_t* t0 = t1_pte & 4096;

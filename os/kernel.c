@@ -111,19 +111,19 @@ paddr_t pagealloc(size_t pageCount){
 }
 
 void ptemake(uint32_t* pagetable, vaddr_t va, paddr_t pa, uint32_t flags){
-  if(is_aligned(va, PAGE_SIZE) || is_aligned(pa, PAGE_SIZE)){
+  if(!(is_aligned(va, PAGE_SIZE) || is_aligned(pa, PAGE_SIZE))){
     PANIC("ptmake: va or pa is not aligned!");
   }
-  uint32_t pte = pa | flags;
+  uint32_t pte = pa | PAGE_V | flags;
   uint32_t t1_pageindex = va >> 22;
   uint32_t t0_pageindex = (va >> 12) & 1024;
   uint32_t t1_pte = pagetable[t1_pageindex];
   if(t1_pte & PAGE_V != PAGE_V){
     paddr_t t0 = pagealloc(1);
-    pagetable[t1_pageindex] = t0 | PAGE_V | PAGE_R | PAGE_W;
+    pagetable[t1_pageindex] = t0 & 1024 | PAGE_V | PAGE_R | PAGE_W;
     t1_pte = pagetable[t1_pageindex];
   }
-  uint32_t* t0 = t1_pte & 0xfff;
+  uint32_t* t0 = t1_pte & 4096;
   t0[t0_pageindex] = pte;
 }
 

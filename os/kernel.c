@@ -10,7 +10,8 @@ extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
-  trap();
+  WRITE_CSR(stvec,trap);
+  __asm__ __volatile__("unimp\n");
   PANIC("booted!");
   printf("unreachable here!\n");
 }
@@ -24,7 +25,7 @@ __attribute__((section(".text.boot"))) __attribute__((naked)) void boot(void) {
 }
 
 void trap(void) {
-  
+  PANIC("trap!");
 }
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,

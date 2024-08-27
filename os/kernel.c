@@ -17,9 +17,10 @@ void kernel_entry(void);
 void handle_trap(void);
 paddr_t alloc_pages(uint32_t);
 void map_page(uint32_t *, uint32_t, paddr_t, uint32_t);
-struct process *create_process(uint32_t);
+struct process *create_process(const void *, size_t);
 void switch_context(uint32_t *, uint32_t *);
 void yield(void);
+void user_entry(void);
 
 struct process *proc_a;
 struct process *proc_b;
@@ -49,12 +50,11 @@ void kernel_main(void) {
 
   WRITE_CSR(stvec, (uint32_t)kernel_entry);
 
-  idle_proc = create_process((uint32_t)NULL);
+  idle_proc = create_process(NULL, 0);
   idle_proc->pid = -1;  // idle
   current_proc = idle_proc;
 
-  proc_a = create_process((uint32_t)proc_a_entry);
-  proc_b = create_process((uint32_t)proc_b_entry);
+  create_process(_binary_shell_bin_start, (size_t)_binary_shell_bin_size);
 
   yield();
   PANIC("switched to idle process");
@@ -207,7 +207,7 @@ void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags) {
   table0[vpn0] = ((paddr / PAGE_SIZE) << 10) | flags | PAGE_V;
 }
 
-struct process *create_process(uint32_t pc) {
+struct process *create_process(const void *image, size_t image_size) {
   // 空いているプロセス管理構造体を探す
   struct process *proc = NULL;
   int i;
@@ -222,19 +222,19 @@ struct process *create_process(uint32_t pc) {
 
   // switch_context() で復帰できるように、スタックに呼び出し先保存レジスタを積む
   uint32_t *sp = (uint32_t *)&proc->stack[sizeof(proc->stack)];
-  *--sp = 0;             // s11
-  *--sp = 0;             // s10
-  *--sp = 0;             // s9
-  *--sp = 0;             // s8
-  *--sp = 0;             // s7
-  *--sp = 0;             // s6
-  *--sp = 0;             // s5
-  *--sp = 0;             // s4
-  *--sp = 0;             // s3
-  *--sp = 0;             // s2
-  *--sp = 0;             // s1
-  *--sp = 0;             // s0
-  *--sp = (uint32_t)pc;  // ra
+  *--sp = 0;                     // s11
+  *--sp = 0;                     // s10
+  *--sp = 0;                     // s9
+  *--sp = 0;                     // s8
+  *--sp = 0;                     // s7
+  *--sp = 0;                     // s6
+  *--sp = 0;                     // s5
+  *--sp = 0;                     // s4
+  *--sp = 0;                     // s3
+  *--sp = 0;                     // s2
+  *--sp = 0;                     // s1
+  *--sp = 0;                     // s0
+  *--sp = (uint32_t)user_entry;  // ra
 
   uint32_t *page_table = (uint32_t *)alloc_pages(1);
 
@@ -242,6 +242,14 @@ struct process *create_process(uint32_t pc) {
   for (paddr_t paddr = (paddr_t)__kernel_base; paddr < (paddr_t)__free_ram_end;
        paddr += PAGE_SIZE)
     map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+
+  // ユーザーのページをマッピングする
+  for (uint32_t off = 0; off < image_size; off += PAGE_SIZE) {
+    paddr_t page = alloc_pages(1);
+    memcpy((void *)page, image + off, PAGE_SIZE);
+    map_page(page_table, USER_BASE + off, page,
+             PAGE_U | PAGE_R | PAGE_W | PAGE_X);
+  }
 
   // 各フィールドを初期化
   proc->pid = i + 1;
@@ -313,4 +321,9 @@ void yield(void) {
   struct process *prev = current_proc;
   current_proc = next;
   switch_context(&prev->sp, &next->sp);
+}
+
+void user_entry(void) {
+  WRITE_CSR(sepc, USER_BASE);
+  __asm__ __volatile__("sret\n");
 }

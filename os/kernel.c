@@ -7,14 +7,64 @@ extern char __stack_top[];
 extern char __bss[], __bss_end[];
 extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
+void traphandler(void);
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 
-  printf("booted!\n");
-  uint32_t result = READ_CSR(stvec);
-  printf("%x\n",result);
-  PANIC("booted!");
+// trapが起こったとき、stvecに保存された関数pointer先にとぶ（ハンドラー）
+  WRITE_CSR(stvec,traphandler);
+  __asm__ __volatile__(
+    "unimp\n"
+  );
+  printf("continue\n");
+}
+
+void traphandler(void){
+  // sw a0というレジスタからオフセット~でstuck 領域に保存する。（変数名とかはない）
+  // 32bitアーキテクチャなので4byte分のスタック領域を確保しなきゃいけない。
+  __asm__ __volatile__(
+    "sw sp, 0(sp);\n"
+    "sw a0, -4(sp);\n"
+    "sw a1, -8(sp);\n"
+    "sw a2, -12(sp);\n"
+    "sw a3, -16(sp);\n"
+    "sw a4, -20(sp);\n"
+    "sw a5, -24(sp);\n"
+    "sw a6, -28(sp);\n"
+    "sw a7, -32(sp);\n"
+    "sw s0, -36(sp);\n"
+    "sw s1, -40(sp);\n"
+    "sw s2, -44(sp);\n"
+    "sw s3, -48(sp);\n"
+    "sw s4, -52(sp);\n"
+    "sw s5, -56(sp);\n"
+    "sw s6, -60(sp);\n"
+    "sw s7, -64(sp);\n"
+    "sw s8, -68(sp);\n"
+    "sw s9, -72(sp);\n"
+    "sw s10, -76(sp);\n"
+    "sw s11, -80(sp);\n"
+    "sw t0, -84(sp);\n"
+    "sw t1, -88(sp);\n"
+    "sw t2, -92(sp);\n"
+    "sw t3, -96(sp);\n"
+    "sw t4, -100(sp);\n"
+    "sw t5, -104(sp);\n"
+    "sw t6, -108(sp);\n"
+    "sw ra, -112(sp);\n"
+    "sw gp, -116(sp);\n"
+    "sw tp, -120(sp);\n"
+    "addi sp, sp, -124;\n"
+    "mv sscratch  sp;\n"
+  );
+  uint32_t error = READ_CSR(scause); 
+  uint32_t where = READ_CSR(sepc);
+  __asm__ __volatile__(
+    "mv sp sscratch;\n"
+    "addi sp, sp, 124;\n"
+  );
+  PANIC("error occured:%x At : %x\n",error,where);
 }
 
 __attribute__((section(".text.boot"))) __attribute__((naked)) void boot(void) {

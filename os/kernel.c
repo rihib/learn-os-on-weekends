@@ -42,7 +42,8 @@ __attribute__((aligned(4))) void traphandle(void){
     "sw s9, -112(sp)\n"
     "sw s10, -116(sp)\n"
     "sw s11, -120(sp)\n"
-    "addi sp, sp, -4*30\n"
+    "sw sp, -124(sp)\n"
+    "addi sp, sp, -4*31\n"
     "csrw sscratch, sp\n"
     : 
     : 
@@ -55,10 +56,7 @@ __attribute__((aligned(4))) void traphandle(void){
   // restore registers
   __asm__ __volatile__ (
     "csrr sp, sscratch\n"
-    "lw ra, 0(sp)\n"
-    "lw gp, 4(sp)\n"
-    "lw tp, 8(sp)\n"
-    "lw s11, 0(sp)\n"
+    "lw s11, 4(sp)\n"
     "lw s10, 4(sp)\n"
     "lw s9, 8(sp)\n"
     "lw s8, 12(sp)\n"
@@ -88,7 +86,7 @@ __attribute__((aligned(4))) void traphandle(void){
     "lw tp, 108(sp)\n"
     "lw gp, 112(sp)\n"
     "lw ra, 116(sp)\n"
-    "addi sp, sp, 4*30\n"
+    "addi sp, sp, 4*31\n"
     : 
   );
   // return from trap

@@ -99,11 +99,11 @@ void trapinit(void){
   WRITE_CSR(STVEC, traphandle);
 }
 
-void* pagealoc(size_t pSize){
-  size_t size = pSize * PAGE_SIZE;
-  char *staddr = __free_ram + used_page_num * PAGE_SIZE;
+paddr_t pagealloc(size_t pageCount){
+  size_t size = pageCount * PAGE_SIZE;
+  paddr_t staddr = __free_ram + used_page_num * PAGE_SIZE;
   if(staddr + size < __free_ram_end){
-    used_page_num += pSize;
+    used_page_num += pageCount;
     memset(staddr, 0, size);
     return staddr;
   }
@@ -115,8 +115,8 @@ void kernel_main(void) {
   trapinit();
   printf("trap initialized\n");
   //__asm__ __volatile__("unimp");
-  char *tp = pagealoc(2);
-  printf("tp: %x\n", tp);
+  paddr_t test_page = pagealloc(2);
+  printf("page_addr: %x\n", test_page);
   PANIC("booted!");
   printf("unreachable here!\n");
 }

@@ -1,5 +1,4 @@
 #include "kernel.h"
-
 #include "common.h"
 
 extern char __kernel_base[];
@@ -7,20 +6,22 @@ extern char __stack_top[];
 extern char __bss[], __bss_end[];
 extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
-paddr_t available_ram_start;
+paddr_t available_ram_start  = __free_ram;
+uint32_t *top_page_table;
 
 void kernel_main(void) {
   printf("Hello, RISC-V!\n");
+  // メモリの初期化
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
-  available_ram_start = __free_ram;
+  // トラップハンドラを設定
   WRITE_CSR(stvec,trap);
-  // __asm__ __volatile__("unimp\n");
-  printf("available_ram_start=%x\n", available_ram_start);
-  paddr_t alloc_page_addr = alloc_page(1);
-  printf("alloc_page_addr=%x\n", alloc_page_addr);
-  printf("available_ram_start=%x\n", available_ram_start);
+
+  // ここから本処理
+  alloc_page_test();
+  alloc_page_test();
+  alloc_page_test();
+  __asm__ __volatile__("unimp\n");
   PANIC("booted!");
-  printf("unreachable here!\n");
 }
 
 __attribute__((section(".text.boot"))) __attribute__((naked)) void boot(void) {
@@ -128,6 +129,12 @@ paddr_t alloc_page(int page_count) {
   return ret;
 }
 
+void alloc_page_test(void) {
+  printf("available_ram_start=%x\n", available_ram_start);
+  paddr_t alloc_page_addr = alloc_page(1);
+  printf("alloc_page_addr=%x\n", alloc_page_addr);
+  printf("available_ram_start=%x\n", available_ram_start);
+}
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,
                        long arg5, long fid, long eid) {

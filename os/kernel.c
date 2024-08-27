@@ -65,11 +65,14 @@ void trap(void) {
   uint32_t sepc = READ_CSR(sepc);
   uint32_t sstatus = READ_CSR(sstatus);
 
-  printf("trap: scause=%x stval=%x sepc=%x sstatus=%x", scause, stval, sepc, sstatus);
-
-  // レジスタの値を戻す
+  printf("trap: scause=%x stval=%x sepc=%x sstatus=%x\n", scause, stval, sepc, sstatus);
+  PANIC("trap!");
   
-  // PANIC("trap!");
+  // レジスタの値を戻す
+  uint32_t sscratch = READ_CSR(sscratch);
+  __asm__ __volatile__(
+    "mv sp, %[sscratch];\n"::[sscratch] "r"(sscratch)
+  );
   __asm__ __volatile__(
     "lw ra, 0(sp);\n"
     "lw gp, -4(sp);\n"
@@ -102,12 +105,8 @@ void trap(void) {
     "lw s10, -112(sp);\n"
     "lw s11, -116(sp);\n"
   );
-  uint32_t sscratch = READ_CSR(sscratch);
   __asm__ __volatile__(
-    "mv sp, %[sscratch];\n"
     "sret;\n"
-    :
-    : [sscratch] "r"(sscratch)
   );
 }
 

@@ -5,9 +5,13 @@
 extern char __kernel_base[];
 extern char __stack_top[];
 extern char __bss[], __bss_end[];
+// シンボルの外部宣言
+// リンカスクリプト内で定義されたシンボルはexternで使えるようになる。(複数同時に宣言することも可能)
 extern char __free_ram[], __free_ram_end[];
+char __ram_top[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 void traphandler(void);
+paddr_t mallocate_pages(int n);
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
@@ -18,6 +22,17 @@ void kernel_main(void) {
     "unimp\n"
   );
   printf("continue\n");
+}
+
+paddr_t mallocate_pages(int n){
+   paddr_t top = (paddr_t)__free_ram;
+   top = top + n * PAGE_SIZE;
+   paddr_t end = (paddr_t)__free_ram_end;
+   if (end < top){
+    PANIC("failed to allocate pages");
+   }
+
+   return top;
 }
 
 void traphandler(void){
@@ -56,16 +71,47 @@ void traphandler(void){
     "sw gp, -116(sp);\n"
     "sw tp, -120(sp);\n"
     "addi sp, sp, -124;\n"
-    "mv sscratch  sp;\n"
   );
   uint32_t error = READ_CSR(scause); 
   uint32_t where = READ_CSR(sepc);
-  __asm__ __volatile__(
-    "mv sp sscratch;\n"
-    "addi sp, sp, 124;\n"
-  );
   PANIC("error occured:%x At : %x\n",error,where);
+  __asm__ __volatile__(
+    "lw tp, 4(sp);\n"
+    "lw gp, 8(sp);\n"
+    "lw ra, 12(sp);\n"
+    "lw t6, 16(sp);\n"
+    "lw t5, 20(sp);\n"
+    "lw t4, 24(sp);\n"
+    "lw t3, 28(sp);\n"
+    "lw t2, 32(sp);\n"
+    "lw t1, 36(sp);\n"
+    "lw t0, 40(sp);\n"
+    "lw s11, 44(sp);\n"
+    "lw s10, 48(sp);\n"
+    "lw s9, 52(sp);\n"
+    "lw s8, 56(sp);\n"
+    "lw s7, 60(sp);\n"
+    "lw s6, 64(sp);\n"
+    "lw s5, 68(sp);\n"
+    "lw s4, 72(sp);\n"
+    "lw s3, 76(sp);\n"
+    "lw s2, 80(sp);\n"
+    "lw s1, 84(sp);\n"
+    "lw s0, 88(sp);\n"
+    "lw a7, 92(sp);\n"
+    "lw a6, 96(sp);\n"
+    "lw a5, 100(sp)\n"
+    "lw a4, 104(sp)\n"
+    "lw a3, 108(sp)\n"
+    "lw a2, 112(sp)\n"
+    "lw a1, 116(sp)\n"
+    "lw a0, 120(sp)\n"
+    "lw sp, 124(sp)"
+    "sret;\n"
+  );
 }
+
+
 
 __attribute__((section(".text.boot"))) __attribute__((naked)) void boot(void) {
   __asm__ __volatile__(

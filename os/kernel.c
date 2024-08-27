@@ -64,9 +64,52 @@ void trap(void) {
   uint32_t stval = READ_CSR(stval);
   uint32_t sepc = READ_CSR(sepc);
   uint32_t sstatus = READ_CSR(sstatus);
-  uint32_t sscratch = READ_CSR(sscratch);
+
   printf("trap: scause=%x stval=%x sepc=%x sstatus=%x", scause, stval, sepc, sstatus);
-  PANIC("trap!");
+
+  // レジスタの値を戻す
+  
+  // PANIC("trap!");
+  __asm__ __volatile__(
+    "lw ra, 0(sp);\n"
+    "lw gp, -4(sp);\n"
+    "lw tp, -8(sp);\n"
+    "lw t0, -12(sp);\n"
+    "lw t1, -16(sp);\n"
+    "lw t2, -20(sp);\n"
+    "lw t3, -24(sp);\n"
+    "lw t4, -28(sp);\n"
+    "lw t5, -32(sp);\n"
+    "lw t6, -36(sp);\n"
+    "lw a0, -40(sp);\n"
+    "lw a1, -44(sp);\n"
+    "lw a2, -48(sp);\n"
+    "lw a3, -52(sp);\n"
+    "lw a4, -56(sp);\n"
+    "lw a5, -60(sp);\n"
+    "lw a6, -64(sp);\n"
+    "lw a7, -68(sp);\n"
+    "lw s0, -72(sp);\n"
+    "lw s1, -76(sp);\n"
+    "lw s2, -80(sp);\n"
+    "lw s3, -84(sp);\n"
+    "lw s4, -88(sp);\n"
+    "lw s5, -92(sp);\n"
+    "lw s6, -96(sp);\n"
+    "lw s7, -100(sp);\n"
+    "lw s8, -104(sp);\n"
+    "lw s9, -108(sp);\n"
+    "lw s10, -112(sp);\n"
+    "lw s11, -116(sp);\n"
+  );
+  uint32_t sscratch = READ_CSR(sscratch);
+  __asm__ __volatile__(
+    "mv sp, %[sscratch];\n"
+    "mret;\n"
+    :
+    : [sscratch] "r"(sscratch)
+  );
+  printf("modoshita\n");
 }
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,

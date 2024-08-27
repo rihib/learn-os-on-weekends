@@ -7,19 +7,30 @@ extern char __bss[], __bss_end[];
 extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 paddr_t available_ram_start  = __free_ram;
-uint32_t *top_page_table;
+uint32_t top_page_table[1024];   // 上位10ビットをページテーブルのインデックスとする
 
 void kernel_main(void) {
   printf("Hello, RISC-V!\n");
+
   // メモリの初期化
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
   // トラップハンドラを設定
   WRITE_CSR(stvec,trap);
+  
+
+  // ページテーブルの初期化
+  for (int i = 0; i < 1024; i++) {
+    top_page_table[i] = 0;
+  }
+  // ページテーブルのアドレスをsatpに設定
+  uint32_t satp_addr = (uint32_t)top_page_table;
+  WRITE_CSR(satp, satp_addr | SATP_SV32);
 
   // ここから本処理
   alloc_page_test();
   alloc_page_test();
   alloc_page_test();
+
   __asm__ __volatile__("unimp\n");
   PANIC("booted!");
 }

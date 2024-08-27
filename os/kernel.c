@@ -101,13 +101,12 @@ void trapinit(void){
 
 paddr_t pagealloc(size_t pageCount){
   size_t size = pageCount * PAGE_SIZE;
-  paddr_t staddr = __free_ram + used_page_num * PAGE_SIZE;
-  if(staddr + size < __free_ram_end){
-    used_page_num += pageCount;
-    memset(staddr, 0, size);
-    return staddr;
-  }
-  PANIC("run out of memory!");
+  paddr_t start = __free_ram + used_page_num * PAGE_SIZE;
+  if(start + size > __free_ram_end)
+    PANIC("run out of memory!");
+  used_page_num += pageCount;
+  memset(start, 0, size);
+  return start;
 }
 
 void kernel_main(void) {

@@ -105,11 +105,10 @@ void trap(void) {
   uint32_t sscratch = READ_CSR(sscratch);
   __asm__ __volatile__(
     "mv sp, %[sscratch];\n"
-    "mret;\n"
+    "sret;\n"
     :
     : [sscratch] "r"(sscratch)
   );
-  printf("modoshita\n");
 }
 
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,

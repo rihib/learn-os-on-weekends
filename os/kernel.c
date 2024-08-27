@@ -8,7 +8,7 @@ extern char __bss[], __bss_end[];
 // シンボルの外部宣言
 // リンカスクリプト内で定義されたシンボルはexternで使えるようになる。(複数同時に宣言することも可能)
 extern char __free_ram[], __free_ram_end[];
-char * __ram_top = __free_ram;
+paddr_t __ram_top;
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 void traphandler(void);
 paddr_t mallocate_pages(int n);
@@ -18,8 +18,19 @@ void kernel_main(void) {
 
 // trapが起こったとき、stvecに保存された関数pointer先にとぶ（ハンドラー）
   WRITE_CSR(stvec,traphandler);
+  __ram_top = (paddr_t)__free_ram;
+  printf("before: %x\n",__free_ram);
+  paddr_t after = mallocate_pages(1);
+  paddr_t result = __ram_top - after;
+  printf("result: %d\n", result);
+
+  printf("before: %x\n",__ram_top);
+  paddr_t after1 = mallocate_pages(1);
+  paddr_t result1 = __ram_top - after1;
+  printf("result: %d\n", result1);
+  PANIC();
   __asm__ __volatile__(
-    "unimp\n"
+    "unimp;\n"
   );
   printf("continue\n"); 
 }
@@ -29,11 +40,12 @@ paddr_t mallocate_pages(int n){
   paddr_t end = (paddr_t)__free_ram_end;
   paddr_t top = free_ram + n * PAGE_SIZE;
   if (end < top){
-  PANIC("failed to allocate pages");
+    PANIC("failed to allocate pages");
   }
 
-  __ram_top = (char *)memset(free_ram, 0, n * PAGE_SIZE);
-  return (__ram_top);
+  __ram_top = top;
+  paddr_t r = memset(free_ram, 0, n * PAGE_SIZE);
+  return r;
 }
 
 void traphandler(void){

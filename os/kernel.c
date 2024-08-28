@@ -11,6 +11,7 @@ extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 void kernel_entry(void);
 void handle_trap(void);
 paddr_t alloc_pages(uint32_t);
+void map_page(uint32_t *, uint32_t, paddr_t, uint32_t);
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
@@ -148,4 +149,22 @@ paddr_t alloc_pages(uint32_t n) {
 
   memset((void *)paddr, 0, n * PAGE_SIZE);
   return paddr;
+}
+
+void map_page(uint32_t *table1, uint32_t vaddr, paddr_t paddr, uint32_t flags) {
+  if (!is_aligned(vaddr, PAGE_SIZE)) PANIC("unaligned vaddr %x", vaddr);
+
+  if (!is_aligned(paddr, PAGE_SIZE)) PANIC("unaligned paddr %x", paddr);
+
+  uint32_t vpn1 = (vaddr >> 22) & 0x3ff;
+  if ((table1[vpn1] & PAGE_V) == 0) {
+    // 2段目のページテーブルが存在しないので作成する
+    uint32_t pt_paddr = alloc_pages(1);
+    table1[vpn1] = ((pt_paddr / PAGE_SIZE) << 10) | PAGE_V;
+  }
+
+  // 2段目のページテーブルにエントリを追加する
+  uint32_t vpn0 = (vaddr >> 12) & 0x3ff;
+  uint32_t *table0 = (uint32_t *)((table1[vpn1] >> 10) * PAGE_SIZE);
+  table0[vpn0] = ((paddr / PAGE_SIZE) << 10) | flags | PAGE_V;
 }

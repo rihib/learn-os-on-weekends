@@ -9,6 +9,8 @@ extern char __free_ram[], __free_ram_end[];
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 
 struct process procs[PROCS_MAX];
+struct process *current_proc;  // 現在実行中のプロセス
+struct process *idle_proc;     // アイドルプロセス
 
 void putchar(char);
 void kernel_entry(void);
@@ -17,6 +19,7 @@ paddr_t alloc_pages(uint32_t);
 void map_page(uint32_t *, uint32_t, paddr_t, uint32_t);
 struct process *create_process(uint32_t);
 void switch_context(uint32_t *, uint32_t *);
+void yield(void);
 
 struct process *proc_a;
 struct process *proc_b;
@@ -25,7 +28,7 @@ void proc_a_entry(void) {
   printf("starting process A\n");
   while (1) {
     putchar('A');
-    switch_context(&proc_a->sp, &proc_b->sp);
+    yield();
 
     for (int i = 0; i < 30000000; i++) __asm__ __volatile__("nop");
   }
@@ -35,7 +38,7 @@ void proc_b_entry(void) {
   printf("starting process B\n");
   while (1) {
     putchar('B');
-    switch_context(&proc_b->sp, &proc_a->sp);
+    yield();
 
     for (int i = 0; i < 30000000; i++) __asm__ __volatile__("nop");
   }
@@ -46,11 +49,15 @@ void kernel_main(void) {
 
   WRITE_CSR(stvec, (uint32_t)kernel_entry);
 
+  idle_proc = create_process((uint32_t)NULL);
+  idle_proc->pid = -1;  // idle
+  current_proc = idle_proc;
+
   proc_a = create_process((uint32_t)proc_a_entry);
   proc_b = create_process((uint32_t)proc_b_entry);
-  proc_a_entry();
 
-  PANIC("unreachable here!");
+  yield();
+  PANIC("switched to idle process");
 }
 
 __attribute__((section(".text.boot"))) __attribute__((naked)) void boot(void) {
@@ -86,7 +93,7 @@ void putchar(char ch) {
 
 __attribute__((aligned(4))) __attribute__((naked)) void kernel_entry(void) {
   __asm__ __volatile__(
-      "csrw sscratch, sp\n"
+      "csrrw sp, sscratch, sp\n"  // sp, sscratch = sscratch, sp;
       "addi sp, sp, -4 * 31\n"
 
       "sw ra, 4 * 0(sp)\n"
@@ -122,6 +129,9 @@ __attribute__((aligned(4))) __attribute__((naked)) void kernel_entry(void) {
 
       "csrr a0, sscratch\n"
       "sw a0, 4 * 30(sp)\n"
+
+      "addi a0, sp, 4 * 31\n"
+      "csrw sscratch, a0\n"
 
       "call handle_trap\n"
 
@@ -275,4 +285,32 @@ __attribute__((naked)) void switch_context(uint32_t *prev_sp,
       "lw s11, 12 * 4(sp)\n"
       "addi sp, sp, 13 * 4\n"
       "ret\n");
+}
+
+void yield(void) {
+  // 実行可能なプロセスを探す
+  struct process *next = idle_proc;
+  for (int i = 0; i < PROCS_MAX; i++) {
+    struct process *proc = &procs[(current_proc->pid + i) % PROCS_MAX];
+    if (proc->state == PROC_RUNNABLE && proc->pid > 0) {
+      next = proc;
+      break;
+    }
+  }
+
+  // 現在実行中のプロセス以外に、実行可能なプロセスがない。戻って処理を続行する
+  if (next == current_proc) return;
+
+  // ページテーブルを切り替える
+  __asm__ __volatile__("sfence.vma");
+  WRITE_CSR(satp, SATP_SV32 | ((uint32_t)next->page_table / PAGE_SIZE));
+  __asm__ __volatile__("sfence.vma");
+
+  // 次に実行するプロセスのスタックトップ（スタックポインタ）をsscratchに書き込む
+  WRITE_CSR(sscratch, (uint32_t)&next->stack[sizeof(next->stack)]);
+
+  // コンテキストスイッチ
+  struct process *prev = current_proc;
+  current_proc = next;
+  switch_context(&prev->sp, &next->sp);
 }

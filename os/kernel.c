@@ -14,13 +14,14 @@ struct process *idle_proc;     // アイドルプロセス
 
 void putchar(char);
 void kernel_entry(void);
-void handle_trap(void);
+void handle_trap(struct trap_frame *);
 paddr_t alloc_pages(uint32_t);
 void map_page(uint32_t *, uint32_t, paddr_t, uint32_t);
 struct process *create_process(const void *, size_t);
 void switch_context(uint32_t *, uint32_t *);
 void yield(void);
 void user_entry(void);
+void handle_syscall(struct trap_frame *);
 
 struct process *proc_a;
 struct process *proc_b;
@@ -133,6 +134,7 @@ __attribute__((aligned(4))) __attribute__((naked)) void kernel_entry(void) {
       "addi a0, sp, 4 * 31\n"
       "csrw sscratch, a0\n"
 
+      "mv a0, sp\n"  // handle_trap関数の引数としてコンテキストを保存したスタック領域のポインタを渡す
       "call handle_trap\n"
 
       "lw ra, 4 * 0(sp)\n"
@@ -170,12 +172,19 @@ __attribute__((aligned(4))) __attribute__((naked)) void kernel_entry(void) {
       "sret\n");
 }
 
-void handle_trap(void) {
+void handle_trap(struct trap_frame *f) {
   uint32_t scause = READ_CSR(scause);
   uint32_t stval = READ_CSR(stval);
   uint32_t sepc = READ_CSR(sepc);
-  PANIC("unexpected trap ocurred; scause=%x, stval=%x, sepc=%x", scause, stval,
-        sepc);
+  if (scause == SCAUSE_ECALL) {
+    handle_syscall(f);
+    sepc += 4;
+  } else {
+    PANIC("unexpected trap occured; scause=%x, stval=%x, sepc=%x\n", scause,
+          stval, sepc);
+  }
+
+  WRITE_CSR(sepc, sepc);
 }
 
 paddr_t alloc_pages(uint32_t n) {
@@ -326,4 +335,14 @@ void yield(void) {
 void user_entry(void) {
   WRITE_CSR(sepc, USER_BASE);
   __asm__ __volatile__("sret\n");
+}
+
+void handle_syscall(struct trap_frame *f) {
+  switch (f->a3) {
+    case SYS_PUTCHAR:
+      putchar(f->a0);
+      break;
+    default:
+      PANIC("unexpected syscall a3=%x\n", f->a3);
+  }
 }

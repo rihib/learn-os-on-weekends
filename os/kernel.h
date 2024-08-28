@@ -72,10 +72,10 @@ struct trap_frame {
   uint32_t sp;
 } __attribute__((packed));
 
-struct pcb{
+typedef struct pcb{
   uint32_t pid;
   uint32_t pstatus;
   char kstack[8192]; //8kb
   uint32_t sp;
   uint32_t *pagetable;
-} PCB;
+} pcb;

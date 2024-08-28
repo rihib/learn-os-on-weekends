@@ -71,3 +71,11 @@ struct trap_frame {
   uint32_t s11;
   uint32_t sp;
 } __attribute__((packed));
+
+struct process {
+  int pid;     // プロセスID
+  int state;   // プロセスの状態
+  vaddr_t sp;  // コンテキストスイッチ時のスタックポインタ
+  uint32_t *page_table;  // 1段目のページテーブルを指すポインタ
+  uint8_t stack[8192];   // カーネルスタック
+};

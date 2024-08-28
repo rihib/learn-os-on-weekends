@@ -1,3 +1,3 @@
 #include "user.h"
 
-void main(void) { printf("Hello World from shell!\n"); }
+void main(void) { printf("shell > "); }

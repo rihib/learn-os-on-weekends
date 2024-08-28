@@ -37,7 +37,7 @@
 void trap(void);
 paddr_t alloc_page(int page_count);
 void alloc_page_test(void);
-void page_mapping(uint32_t *first_page_table, uint32_t vaddr, uint32_t paddr)
+void page_mapping(uint32_t *first_page_table, uint32_t vaddr, uint32_t paddr);
 struct sbiret {
   long error;
   long value;

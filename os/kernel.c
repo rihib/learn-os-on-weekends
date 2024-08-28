@@ -17,14 +17,18 @@ void kernel_main(void) {
   // トラップハンドラを設定
   WRITE_CSR(stvec,trap);
   
-
+  printf("----------page table-----------\n");
   // ページテーブルの初期化
   for (int i = 0; i < 1024; i++) {
     top_page_table[i] = 0;
   }
-  // ページテーブルのアドレスをsatpに設定
-  uint32_t satp_addr = (uint32_t)top_page_table;
-  WRITE_CSR(satp, satp_addr | SATP_SV32);
+  // カーネル空間の仮想アドレスと物理アドレスは同一のものにする
+  for (uint32_t i = 0x80000000; i < 0x80000000 + 0x1000000; i += PAGE_SIZE) {
+    page_mapping(top_page_table, i, i);
+  }
+  printf("----------page table end-----------\n");
+  // ページテーブルのアドレスをsatpに設定s
+  WRITE_CSR(satp, (uint32_t)top_page_table | SATP_SV32);
 
 
   // ここから本処理
@@ -149,6 +153,13 @@ void alloc_page_test(void) {
 }
 
 void page_mapping(uint32_t *first_page_table, uint32_t vaddr, uint32_t paddr) {
+  printf("mapping vaddr=%x paddr=%x...\n", vaddr, paddr);
+  if (is_aligned(vaddr, PAGE_SIZE) == false) {
+    PANIC("vaddr is not aligned");
+  }
+  if (is_aligned(paddr, PAGE_SIZE) == false) {
+    PANIC("paddr is not aligned");
+  }
   uint32_t first_table_ind = (vaddr >> 22) & 0x3ff;
   uint32_t second_table_ind = (vaddr >> 12) & 0x3ff;
   uint32_t offset = (vaddr >> 0) & 0xfff;
@@ -157,12 +168,15 @@ void page_mapping(uint32_t *first_page_table, uint32_t vaddr, uint32_t paddr) {
   if ((second_table_info & PAGE_V) == 0) {
     second_table_paddr = alloc_page(1);
     first_page_table[first_table_ind] = (second_table_paddr<<10) | PAGE_V | PAGE_R | PAGE_W | PAGE_X | PAGE_U;
+    printf("second_table not made, made new table at %x\n", second_table_paddr);
   }
   else {
     second_table_paddr = (second_table_info & 0xfffffc00) >>10;
+    printf("second_table found at %x\n", second_table_paddr);
   }
   uint32_t *second_page_table = second_table_paddr;
   second_page_table[second_table_ind] = (paddr << 10) | PAGE_V | PAGE_R | PAGE_W | PAGE_X | PAGE_U;
+  printf("successfully mapped vaddr=%x paddr=%x\n", vaddr, paddr);
 }
 struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4,
                        long arg5, long fid, long eid) {

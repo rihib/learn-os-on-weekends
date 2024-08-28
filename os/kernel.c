@@ -12,6 +12,7 @@ paddr_t __ram_top;
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 void traphandler(void);
 paddr_t mallocate_pages(int n);
+paddr_t pagealloc(size_t pageCount);
 
 void kernel_main(void) {
   memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
@@ -28,11 +29,40 @@ void kernel_main(void) {
   paddr_t after1 = mallocate_pages(1);
   paddr_t result1 = __ram_top - after1;
   printf("result: %d\n", result1);
-  PANIC();
   __asm__ __volatile__(
     "unimp;\n"
   );
-  printf("continue\n"); 
+  printf("continue\n");
+}
+
+// PointerAddress_t
+// pagetableはポインタのリスト
+// プロセスに領域を割り当てる処理
+void page_table(paddr_t table1[], paddr_t p, paddr_t v, paddr_t flags){
+  if (!(is_aligned(p,PAGE_SIZE))){
+    PANIC();
+  }
+  if (!(is_aligned(v,PAGE_SIZE))){
+    PANIC();
+  }
+  // 仮想アドレスの上位10ビットを取り出して、ページ番号を把握する
+  paddr_t vpn1 = v >> 22;
+  //　一段目のページリストがあるか
+  paddr_t *table0 = table1[vpn1];
+
+  // 上位20ビットを取り出して、ページ番号を把握する
+  paddr_t vpn0 = v / PAGE_SIZE;
+  // 中10ビットを抽出
+  vpn0 = vpn0 >> 12;
+  vpn0 = vpn0 & 1024;
+
+  // ゼロ埋めされたモノが来たら(もしくは無効なものが来たら)
+  if (*table0 & PAGE_V == 0) {
+    // フラグを立てる
+    *table0 = mallocate_pages(1);
+  }
+  table0[vpn0] = p | flags;
+  table1[vpn1] = *table0 | flags;
 }
 
 paddr_t mallocate_pages(int n){
@@ -48,9 +78,10 @@ paddr_t mallocate_pages(int n){
   return r;
 }
 
-void traphandler(void){
-  // sw a0というレジスタからオフセット~でstuck 領域に保存する。（変数名とかはない）
-  // 32bitアーキテクチャなので4byte分のスタック領域を確保しなきゃいけない。
+// レジスタに渡すからaligned(4)にしているって感じ？
+__attribute__((aligned(4))) void traphandler(void){
+  // // sw a0というレジスタからオフセット~でstuck 領域に保存するx。（変数名とかはない）
+  // // 32bitアーキテクチャなので4byte分のスタック領域を確保しなきゃいけない。
   __asm__ __volatile__(
     "sw sp, 0(sp);\n"
     "sw a0, -4(sp);\n"
@@ -84,6 +115,9 @@ void traphandler(void){
     "sw gp, -116(sp);\n"
     "sw tp, -120(sp);\n"
     "addi sp, sp, -124;\n"
+    : 
+    : 
+    : "memory"
   );
   uint32_t error = READ_CSR(scause); 
   uint32_t where = READ_CSR(sepc);

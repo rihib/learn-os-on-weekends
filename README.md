@@ -1,7 +1,7 @@
 # **はじめに**
 
 > [!IMPORTANT]
-> この資料は[Writing an OS in 1,000 Lines](https://operating-system-in-1000-lines.vercel.app/)の内容をベースにしています。
+> この資料は高校生向けにOSの基礎を教える資料です。[Writing an OS in 1,000 Lines](https://operating-system-in-1000-lines.vercel.app/)の内容をベースにしています。
 > また、その他の説明については[工学基礎シリーズ オペレーティングシステム](https://www.ohmsha.co.jp/book/9784274229152/)を参照しました。
 
 OSについて、理論的な部分を学びながら、都度得た知識をもとに実装していくことで、理解を深めていくことを目指す。

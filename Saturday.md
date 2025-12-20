@@ -29,6 +29,7 @@ OSの役割には大きく２つあり、ハードウェアリソースの管理
 
 ```bash
 brew install llvm qemu lld
+echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> /Users/YOUR_PATH/.zshrc # パスを通す
 git clone https://github.com/rihib/learn-os-on-weekends.git
 cd learn-os-on-weekends/os
 ```

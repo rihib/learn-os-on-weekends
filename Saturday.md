@@ -44,8 +44,6 @@ cd learn-os-on-weekends/os
 curl -LO https://github.com/qemu/qemu/raw/v8.0.4/pc-bios/opensbi-riscv32-generic-fw_dynamic.bin
 ```
 
-また、`os/run.sh`をUbutnu用に修正すること（[参考](https://github.com/rihib/learn-os-on-weekends/pull/2)）。
-
 ## **コンピュータのハードウェア**
 
 ### **ISA**
